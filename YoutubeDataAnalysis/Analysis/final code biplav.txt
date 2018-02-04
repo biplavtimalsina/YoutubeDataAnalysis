@@ -1,0 +1,417 @@
+require(ggplot2)
+require(GGally)
+require(CCA)
+library(MASS)     # ... for Multivariate Normal Distribution
+library(car)      # ... for ellipse plots
+//install library reshape for melt
+
+data1<-read.table("numb.csv",sep=',',header=TRUE)
+data1
+###############################################
+#age, length, views, rate, ratings, comments
+//convert data to numeric value
+dataNum<-matrix(data=NA,nrow=dim(data1)[1],ncol=dim(data1)[2])
+for(i in 1:dim(data1)[2]){
+	dataNum[,i]<-c(as.numeric(data1[[i]]))
+}
+###############################################
+//remove NaN values columns
+
+data<-na.omit(dataNum)
+cor(data)
+# test of normality for individual data
+qqnorm(data[,5])
+ qqline(data[,5],col="red")
+ qqnorm(data[,4])
+ qqline(data[,4],col="red")
+ qqnorm(data[,3])
+ qqline(data[,3],col="red")
+ qqnorm(data[,2])
+ qqline(data[,2],col="red")
+##################################################
+
+#test of multivariate normality
+
+x<-data[:c(2,7)]
+chisq.test(x)
+ 
+x<-data[:c(2,7)]
+S1<-solve(cov(x))     # inverse of estimated covariance
+d<-rep(0,len)
+for (i in 1:353)
+	d[i]<-t(x[i,])%*%S1%*%x[i,]  # distance from i-th point
+
+qqplot(qchisq(seq(1,len)/len,6),d) # qqplot with chi-sq quantiles
+segments(0,0,10,10,col='red',lwd=2)
+grid()
+ks.test(d, "pchisq" , 6 )
+
+
+
+l3<-read.table("l3.csv",sep=',',header=FALSE)
+plot(l3)
+
+l3Num<-matrix(data=NA,nrow=dim(l3)[1],ncol=dim(l3)[2])
+for(i in 1:dim(data1)[2]){
+	l3Num[,i]<-c(as.numeric(l3[[i]]))
+}
+l3Numfinal<-na.omit(l3Num)
+cor(l3Numfinal)
+l3n=l3Numfinal[,seq(2,6)]
+
+##################################################
+#principal component analysis
+#doing principal component analysis on l3n
+
+p<-princomp(l3n,cor=TRUE)
+summary(p)
+p$sdev
+p$loadings			# coefficients of linear transformations
+plot(p) 
+
+
+################################################
+#Factor analysis
+
+fa<-factanal(l3n,factors=2,rotation='promax',scores='Bart')
+fa
+fa<-factanal(l3n,factors=2,rotation='varimax',scores='Bart')
+fa
+fa<-factanal(l3n,factors=2,rotation='none',scores='Bart')
+fa
+fa<-factanal(l3n,factors=1,rotation='promax',scores='Bart')
+fa
+fa<-factanal(l3n,factors=1,rotation='none',scores='Bart')
+fa
+fa<-factanal(l3n,factors=1,rotation='varimax',scores='Bart')
+fa
+##################################################
+
+##Clustering
+
+data1<-read.csv("3.txt",sep='\t',header=FALSE)
+data1
+
+n=700000
+imp<-data1[,c(3,5,6,7,8,9,4)];
+unique(imp$V4)
+#there are 14 unique levels
+
+X=imp[1:n,-7]
+
+d<-dist(X,method='manhattan')
+h<-hclust(d,method='sing')
+plot(h,hang=-.01,xlab='',sub='',main='')
+c<-cutree(h,k=14)
+
+I1<-c==1
+I2<-c==2
+I3<-c==3
+I4<-c==4
+I5<-c==5
+I6<-c==6
+I7<-c==7
+I8<-c==8
+I9<-c==9
+I10<-c==10
+I11<-c==11
+I12<-c==12
+I13<-c==13
+I14<-c==14
+att1=4
+att2=6
+plot(X[1:n,att1],X[1:n,att2],pch=19,xlab="Rates", ylab="Comments")# 
+points(X[I1,att1],X[I1,att2],col='red',pch=19)#
+points(X[I2,att1],X[I2,att2],col='blue',pch=19) # 
+points(X[I3,att1],X[I3,att2],col='gray',pch=19)# 
+points(X[I4,att1],X[I4,att2],col='pink',pch=19) # 
+points(X[I5,att1],X[I5,att2],col='green',pch=19)# 
+points(X[I6,att1],X[I6,att2],col='yellow',pch=19) # 
+points(X[I7,att1],X[I7,att2],col='purple',pch=19)# G
+points(X[I8,att1],X[I8,att2],col='orange',pch=19) # 
+points(X[I9,att1],X[I9,att2],col='magenta',pch=19)#
+points(X[I10,att1],X[I10,att2],col='beige',pch=19) #
+points(X[I11,att1],X[I11,att2],col='cyan',pch=19)# 
+points(X[I12,att1],X[I12,att2],col='orchid',pch=19) # 
+points(X[I13,att1],X[I13,att2],col='gold',pch=19)# 
+points(X[I14,att1],X[I14,att2],col='tan',pch=19) # 
+
+##########################################################################
+#trying to draw the likes/popularity curve for diff categories
+
+data1<-read.csv("3.txt",sep='\t',header=FALSE)
+
+imp<-data1[,c(6,7,8,9,4)];
+imp=na.omit(imp)
+
+#imp10<-imp[c(150:160),]
+#imp10<-na.omit(imp10)
+
+#l3Num<-matrix(data=NA,nrow=dim(imp10)[1],ncol=dim(imp10)[2])
+#for(i in 1:dim(data1)[2]){
+#	l3Num[,i]<-c(as.numeric(imp10[[i]]))
+#}
+#l3Numfinal<-na.omit(l3Num)
+
+
+
+category="Music"
+#average views
+views=which(imp[,5]==category)
+views=t(views)
+views=t(views)
+sumSp_views=sum(imp[views,1])
+len_views=length(views)
+mean_views=sumSp_views/len_views;
+mean_views
+
+
+#average rate
+rate=which(imp[,5]==category)
+rate=t(rate)
+rate=t(rate)
+sumSp_rate=sum(imp[rate,2])
+len_rate=length(rate)
+mean_rate=sumSp_rate/len_rate;
+mean_rate
+
+#ratings
+nrate=which(imp[,5]==category)
+nrate=t(nrate)
+nrate=t(nrate)
+sumSp_nrate=sum(imp[nrate,3])
+len_nrate=length(nrate)
+mean_nrate=sumSp_nrate/len_nrate;
+mean_nrate
+
+#comments
+com=which(imp[,5]==category)
+com=t(com)
+com=t(com)
+sumSp_com=sum(imp[com,4])
+len_com=length(com)
+mean_com=sumSp_com/len_com;
+mean_com
+
+#######################################################
+cate=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics")
+
+
+
+for( i in 1:13){
+	views=which(imp[,5]==cate[i])
+	views=t(views)
+	views=t(views)
+	sumSp_views=sum(imp[views,1])
+	len_views=length(views)
+	mean_views[i]=sumSp_views/len_views;
+	
+
+	#average rate
+	rate=which(imp[,5]==cate[i])
+	rate=t(rate)
+	rate=t(rate)
+	sumSp_rate=sum(imp[rate,2])
+	len_rate=length(rate)
+	mean_rate[i]=sumSp_rate/len_rate;
+
+
+	#ratings
+	nrate=which(imp[,5]==cate[i])
+	nrate=t(nrate)
+	nrate=t(nrate)
+	sumSp_nrate=sum(imp[nrate,3])
+	len_nrate=length(nrate)
+	mean_nrate[i]=sumSp_nrate/len_nrate;
+
+	#comments
+	com=which(imp[,5]==cate[i])
+	com=t(com)
+	com=t(com)
+	sumSp_com=sum(imp[com,4])
+	len_com=length(com)
+	mean_com[i]=sumSp_com/len_com;
+
+}
+
+######################################
+#trying to store different files in a same matrix
+filenames<-list.files(path="C:\\Users\\btimalsina\\Documents\\biplav\\unr\\2nd sem\\big data\\project\\all files",pattern=NULL)
+
+names<-substr(filenames,1,5)
+names
+
+for(i in names){
+    filepath <- file.path("C:\\Users\\btimalsina\\Documents\\biplav\\unr\\2nd sem\\big data\\project\\all files",paste(i,".txt",sep=""))
+    assign(i, read.csv(filepath,sep = "\t",header=FALSE))
+}
+
+
+###reading successful
+
+###################################################
+# lets try extracting related data columns
+
+filenames<-list.files(path="C:\\Users\\btimalsina\\Documents\\biplav\\unr\\2nd sem\\big data\\project\\all files",pattern=NULL)
+
+names<-substr(filenames,1,5)
+names
+
+for(i in names){
+    filepath <- file.path("C:\\Users\\btimalsina\\Documents\\biplav\\unr\\2nd sem\\big data\\project\\all files",paste(i,".txt",sep=""))
+    assign(i, read.csv(filepath,sep = "\t",header=FALSE))
+		
+}
+
+names=t(t(names))
+
+imp<-[,c(6,7,8,9,4)];
+imp=na.omit(imp)
+
+cate=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics")
+
+
+#to display values, type may01
+
+###########################################################################################################################
+
+
+############################################
+## combining different data files successful
+##############################################
+#need to put the current directory in all files directory
+
+pathe="C:\\Users\\btimalsina\\Documents\\biplav\\unr\\2nd sem\\big data\\project\\all files";
+sep=t(as.array(rep(0,10),nrow=10,ncol=1))
+sepe=t(as.array(rep(0,10),nrow=10,ncol=1))
+temp=list.files(path=pathe, pattern="*.txt")
+x<-read.csv("C:\\Users\\btimalsina\\Documents\\biplav\\unr\\2nd sem\\big data\\project\\all files\\amay01.txt",sep="\t",header=FALSE)
+sep[1]=0
+sepe[1]=0
+for (i in 1:length(temp)) {
+    	temp2 = read.csv(temp[i], header = FALSE,sep="\t")
+    	sep[i+1]=dim(temp2)[1]
+	x <- rbind(x,temp2)
+	sepe[i+1]=sep[i]+sep[i+1]
+}
+
+
+#################################################################
+#trying to generate values of the averages
+
+imp<-x[,c(6,7,8,9,4)];
+cor_data=x[,c(3,5,6,7,8,9)]
+av_views=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+av_rate=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+av_ratings=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+av_com=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+
+
+
+
+
+cate=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics")
+for(j in 1:length(temp)){
+
+temp_imp=imp[sep[j]+1:sep[j+1],]
+temp_imp=na.omit(temp_imp)
+views=0;
+len_views=0;
+mean_views=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+mean_rate=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+mean_ratings=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+mean_com=t(t(as.array(rep(0,14),nrow=num_files,ncol=1)))
+
+
+for( i in 1:13){
+	views=which(temp_imp[,5]==cate[i])
+	views=t(views)
+	views=t(views)
+	sumSp_views=sum(temp_imp[views,1])
+	len_views=length(views)
+	mean_views[i]=sumSp_views/len_views;
+	
+
+	#average rate
+	rate=which(temp_imp[,5]==cate[i])
+	rate=t(rate)
+	rate=t(rate)
+	sumSp_rate=sum(temp_imp[rate,2])
+	len_rate=length(rate)
+	mean_rate[i]=sumSp_rate/len_rate;
+
+
+	#ratings
+	nrate=which(temp_imp[,5]==cate[i])
+	nrate=t(nrate)
+	nrate=t(nrate)
+	sumSp_nrate=sum(temp_imp[nrate,3])
+	len_nrate=length(nrate)
+	mean_nrate[i]=sumSp_nrate/len_nrate;
+
+	#comments
+	com=which(temp_imp[,5]==cate[i])
+	com=t(com)
+	com=t(com)
+	sumSp_com=sum(temp_imp[com,4])
+	len_com=length(com)
+	mean_com[i]=sumSp_com/len_com;
+	
+
+}
+
+#mean_v=t(t(mean_views))
+#mean_r=t(t(mean_rate))
+#mean_n=t(t(mean_nrate))
+#mean_c=t(t(mean_com))
+
+av_views=cbind(av_views,mean_views)
+av_rate=cbind(av_rate,mean_rate)
+av_ratings=cbind(av_ratings,mean_nrate)
+av_com=cbind(av_com,mean_com)
+
+}
+##############################################################
+##########################################
+##needs reshape package
+library(reshape)
+library(RColorBrewer)
+
+p<-read.csv("av_views.csv",header=TRUE,sep=',')
+op<-par(cex=.64)
+matplot(t(p),type="l",lty=1,lwd=1,col=c(1:13),main="Average Views for different Categories in time", xlab="Time",ylab="Views")
+legend("topright", inset=.05,text.font=1,pch=1, col=c(1:13) ,horiz=FALSE,legend=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics"))
+par(op)
+
+color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+p<-read.csv("av_rate.csv",header=TRUE,sep=',')
+op<-par(cex=.64)
+matplot(t(p),type="l",lty=1,lwd=1,col=c(1:13),main="Average Rate for different Categories in time", xlab="Time",ylab="Rate")
+legend("bottomright", inset=.05,text.font=1,pch=1, col=c(1:13),horiz=FALSE,legend=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics"))
+par(op)
+
+p<-read.csv("av_nrate.csv",header=TRUE,sep=',')
+op<-par(cex=.64)
+matplot(t(p),type="l",lty=1,lwd=1,main="Average Number of Rating for different Categories in time", xlab="Time",ylab="Number of Ratings",col=c(1:13))
+legend("bottomright", inset=.05,text.font=1,pch=1, col=c(1:13),horiz=FALSE,legend=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics"))
+par(op)
+
+op<-par(cex=.64)
+p<-read.csv("av_comments.csv",header=TRUE,sep=',')
+matplot(t(p),type="l",lty=1,lwd=1,main="Average Number of Comments for different Categories in time", xlab="Time",ylab="Number of Comments",col=c(1:13))
+legend("topright", inset=.05,text.font=1,pch=1, col=c(1:13),horiz=FALSE,legend=c("Sports","Entertainment","Music", "People & Blogs","Howto & DIY","UNA","Comedy","Gadgets & Games","Film & Animation","Travel & Places","Autos & Vehicles","Pets & Animals","News & Politics"))
+par(op)
+
+###########################################################################
+##plotting power law for rate, views, ratings and comments
+
+hist_data=x;
+hist_data=na.omit(hist_data)
+##views
+vi=t(t(as.array(rep(0,11),nrow=10,ncol=1)))
+for(i in 1:10){
+	vi[i]=sum(hist_data[,6]>(i-1)*100000 & hist_data[,6]<(i*100000))
+}
+vi[i+1]=sum(hist_data[,6]>100000)
+
+
